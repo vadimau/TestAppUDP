@@ -12,7 +12,7 @@ namespace TestAppUDP
     /// </summary>
     [Table("udpData")]
     [Serializable]
-    class udpData
+    public class udpData
     {
         [Key]
         public Guid ID { get; set; } = Guid.NewGuid();

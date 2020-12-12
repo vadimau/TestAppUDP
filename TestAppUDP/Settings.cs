@@ -23,7 +23,7 @@ namespace TestAppUDP
 
                 while (xmlReader.Read())
                 {
-                    if ((xmlReader.NodeType == XmlNodeType.Element))
+                    if (xmlReader.NodeType == XmlNodeType.Element)
                     {
                         var name = xmlReader.Name;
                         xmlReader.Read();
