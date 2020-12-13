@@ -12,11 +12,11 @@ namespace TestAppUDP
     /// </summary>
     [Table("udpData")]
     [Serializable]
-    public class udpData
+    public class UdpData
     {
         [Key]
         public Guid ID { get; set; } = Guid.NewGuid();
-        [Column("count")]
+        [NotMapped]
         public long count { get; set; } = 0;
         [Column("lostPackages")]
         public long lostPackages { get; set; } = 0;
@@ -32,23 +32,28 @@ namespace TestAppUDP
         public int value4 { get; set; } = 0;
         [Column("value5")]
         public int value5 { get; set; } = 0;
+        [NotMapped]
+        public bool HasValue { get; set; } = false;
 
-        public udpData()
+        public UdpData()
         {
             this.dateTime = DateTime.Now;
         }
-        public udpData(long count, int value1, int value2, int value3, int value4, int value5)
+        public UdpData(long count, int value1, int value2, int value3, int value4, int value5)
         {
             this.dateTime = DateTime.Now;
+            this.count = count;
             this.value1 = value1;
             this.value2 = value1;
             this.value3 = value1;
             this.value4 = value1;
             this.value5 = value1;
+            this.HasValue = true;
         }
         public override string ToString()
         {
             return count.ToString()
+                + "  " + lostPackages.ToString()
                 + "  " + value1.ToString()
                 + "  " + value2.ToString()
                 + "  " + value3.ToString()

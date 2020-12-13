@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading.Tasks;
 using System.Timers;
 using TestAppUDP;
 
@@ -17,6 +18,7 @@ namespace udpGenerator
         private static IPAddress ipAdr;
         private static Socket s;
         private static IPEndPoint ipep;
+        private static Task generate;
 
         static void Main(string[] args)
         {
@@ -39,7 +41,7 @@ namespace udpGenerator
             s.Close();
         }
 
-        private static byte[] Serialyse(udpData udpData)
+        private static byte[] Serialyse(UdpData udpData)
         {
             BinaryFormatter formatter = new BinaryFormatter();
             MemoryStream stream = new MemoryStream();
@@ -58,24 +60,31 @@ namespace udpGenerator
             ipep = new IPEndPoint(ipAdr, 4567);
             s.Connect(ipep);
         }
-        private static void GenImpulse_Elapsed(object sender, ElapsedEventArgs e)
+
+        private static void GenerateData()
         {
-            Console.WriteLine(count);
-            count = count==long.MaxValue ? 0 : count+1;
-            var randomInt = new Random(int.MaxValue);
+            
+            count = count == long.MaxValue ? 0 : count + 1;
+            var randomInt = new Random();
             var value1 = randomInt.Next();
             var value2 = randomInt.Next();
             var value3 = randomInt.Next();
             var value4 = randomInt.Next();
             var value5 = randomInt.Next();
-            var udpData = new udpData(count, value1, value2, value3, value4, value5);
+            var udpData = new UdpData(count, value1, value2, value3, value4, value5);
+            Console.WriteLine(udpData);
             var bytes = Serialyse(udpData);
 
 
-            
+
             byte[] b = Serialyse(udpData);
             s.Send(b, b.Length, SocketFlags.None);
-            
+        }
+        private static void GenImpulse_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            generate?.Wait();
+            generate = new Task(GenerateData);
+            generate.Start();
         }
     }
 }

@@ -17,8 +17,8 @@ namespace TestAppUDP
         private static IPAddress ipAdr;
         private static Socket s;
         private static IPEndPoint ipep;
-        private static udpData oldUdpData;
-        private static udpData udpData;
+        private static UdpData oldUdpData=new UdpData();
+        private static UdpData udpData;
         private static string ip;
         private static Task receiving;
         private static bool taskEnabled;
@@ -52,6 +52,7 @@ namespace TestAppUDP
         private static void TimerLenght_Elapsed(object sender, ElapsedEventArgs e)
         {
             taskEnabled = true;
+            receiving = new Task(Receive);
             receiving.Start();
             timerLenght.Stop();
             timerPeriod.Start();
@@ -77,13 +78,13 @@ namespace TestAppUDP
            
         }
 
-        private static udpData Deserialyse(byte[] serializedAsBytes)
+        private static UdpData Deserialyse(byte[] serializedAsBytes)
         {
             MemoryStream stream = new MemoryStream();
             BinaryFormatter formatter = new BinaryFormatter();
             stream.Write(serializedAsBytes, 0, serializedAsBytes.Length);
             stream.Seek(0, SeekOrigin.Begin);
-            return (udpData)formatter.Deserialize(stream);
+            return (UdpData)formatter.Deserialize(stream);
         }
 
         private static void Receive()
@@ -94,15 +95,22 @@ namespace TestAppUDP
                 byte[] b = new byte[10240];
                 s.Receive(b);
                 udpData = Deserialyse(b);
+                if(oldUdpData.HasValue)
+                {
+                    if(udpData.dateTime.Subtract(oldUdpData.dateTime).TotalMinutes<1)
+                    {
+                        udpData.lostPackages = udpData.count - oldUdpData.count - 1;
+                    }
+                }
+                oldUdpData = udpData;
                 Console.WriteLine(udpData.ToString());
                 using (ApplicationContext db = new ApplicationContext())
                 {
-                    db.udpData.Add(new udpData());
-                    udpData udpData = new udpData();
+                    db.udpData.Add(udpData);
                     db.SaveChanges();
                 }
 
-            } while (true);//taskEnabled
+            } while (taskEnabled);
 
 
         }

@@ -7,7 +7,7 @@ namespace TestAppUDP
 {
     class ApplicationContext : DbContext
     {
-        public DbSet<udpData> udpData { get; set; }
+        public DbSet<UdpData> udpData { get; set; }
 
         public ApplicationContext()
         {
@@ -19,6 +19,10 @@ namespace TestAppUDP
                 "server=localhost;user=root;password=1qazse456;database=mydb;"
                 
             );
+        }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UdpData>().HasIndex(u => new { u.value1, u.value2, u.value3, u.value4, u.value5 });
         }
     }
 }
