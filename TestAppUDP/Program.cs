@@ -82,12 +82,15 @@ namespace TestAppUDP
         {
             Console.WriteLine("TimerPeriod_Elapsed");
             taskEnabled = false;
-            receiving.Wait();
+            receiving.Dispose();
+            if (receiving.IsCompleted)
+            {
                 Console.WriteLine(DateTime.Now.ToString() + " task paused");
                 timerPeriod.Stop();
                 timerLenght.Start();
-
+            }
         }
+
 
         private static void CreateSok()
         {

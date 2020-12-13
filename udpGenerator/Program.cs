@@ -60,6 +60,20 @@ namespace udpGenerator
             CreateSok();
         }
 
+        public static void SendMessage(byte[] data)
+        {
+            using (var udpClient = new UdpClient(AddressFamily.InterNetwork))
+            {
+                var address = IPAddress.Parse("224.100.0.1");
+                var ipEndPoint = new IPEndPoint(address, 8088);
+                udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, 8088));
+                udpClient.JoinMulticastGroup(8088, address);
+                udpClient.MulticastLoopback = true;
+                udpClient.Send(data, data.Length, ipEndPoint);
+                udpClient.Close();
+            }
+        }
+
         private static byte[] Serialyse(UdpData udpData)
         {
             BinaryFormatter formatter = new BinaryFormatter();
@@ -97,7 +111,8 @@ namespace udpGenerator
 
 
             byte[] b = Serialyse(udpData);
-            s.Send(b, b.Length, SocketFlags.None);
+            SendMessage(b);
+            //s.Send(b, b.Length, SocketFlags.None);
             workTimeout.Stop();
             workTimeout.Start();
         }
