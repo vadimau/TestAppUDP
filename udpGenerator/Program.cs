@@ -39,7 +39,7 @@ namespace udpGenerator
 
             random = new Random();
 
-            CreateSok();
+            //CreateSok();
 
             genImpulse.Interval = genPeriod;
             genImpulse.Elapsed += GenImpulse_Elapsed;
@@ -57,17 +57,16 @@ namespace udpGenerator
         {
             Console.WriteLine("Что-то с сетью");
             generate.Dispose();
-            CreateSok();
+            //CreateSok();
         }
 
         public static void SendMessage(byte[] data)
         {
             using (var udpClient = new UdpClient(AddressFamily.InterNetwork))
             {
-                var address = IPAddress.Parse("224.100.0.1");
-                var ipEndPoint = new IPEndPoint(address, 8088);
-                udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, 8088));
-                udpClient.JoinMulticastGroup(8088, address);
+                var address = IPAddress.Parse(ip);
+                var ipEndPoint = new IPEndPoint(address, 4567);
+                udpClient.JoinMulticastGroup(address);
                 udpClient.MulticastLoopback = true;
                 udpClient.Send(data, data.Length, ipEndPoint);
                 udpClient.Close();
