@@ -44,10 +44,10 @@ namespace TestAppUDP
             this.dateTime = DateTime.Now;
             this.count = count;
             this.value1 = value1;
-            this.value2 = value1;
-            this.value3 = value1;
-            this.value4 = value1;
-            this.value5 = value1;
+            this.value2 = value2;
+            this.value3 = value3;
+            this.value4 = value4;
+            this.value5 = value5;
             this.HasValue = true;
         }
         public override string ToString()

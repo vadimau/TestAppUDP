@@ -10,8 +10,13 @@ namespace TestAppUDP
 {
     class Program
     {
+        //Таймер для отсчета времени работы
         private static Timer timerPeriod;
+        //Таймер для отсчета времени паузы в работе
         private static Timer timerLenght;
+        //Таймер для определение неполадок в сети
+        private static Timer workTimeout;
+
         private static int pausePeriod;
         private static int pauseLenght;
         private static IPAddress ipAdr;
@@ -22,6 +27,7 @@ namespace TestAppUDP
         private static string ip;
         private static Task receiving;
         private static bool taskEnabled;
+        private static bool firstStart = true;
 
         static void Main(string[] args)
         {
@@ -35,10 +41,13 @@ namespace TestAppUDP
                 pauseLenght = int.Parse(settings.parameters["pauseLenght"].ToString());
             timerPeriod = new Timer();
             timerLenght = new Timer();
+            workTimeout = new Timer();
             timerPeriod.Interval = pausePeriod;
             timerLenght.Interval = pauseLenght;
+            workTimeout.Interval = 6000;
             timerPeriod.Elapsed += TimerPeriod_Elapsed;
             timerLenght.Elapsed += TimerLenght_Elapsed;
+            workTimeout.Elapsed += WorkTimeout_Elapsed;
             CreateSok();
             receiving = new Task(Receive);
             receiving.Start();
@@ -49,22 +58,35 @@ namespace TestAppUDP
             s.Close();
         }
 
+        private static void WorkTimeout_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if(!s.Connected)
+            {
+                Console.WriteLine("Что-то с сетью");
+                CreateSok();
+            }
+                
+        }
+
         private static void TimerLenght_Elapsed(object sender, ElapsedEventArgs e)
         {
             taskEnabled = true;
             receiving = new Task(Receive);
-            receiving.Start();
             timerLenght.Stop();
             timerPeriod.Start();
-            
+            if (receiving.Status!=TaskStatus.Running)
+                receiving.Start();
         }
 
         private static void TimerPeriod_Elapsed(object sender, ElapsedEventArgs e)
         {
+            Console.WriteLine("TimerPeriod_Elapsed");
             taskEnabled = false;
             receiving.Wait();
-            timerPeriod.Stop();
-            timerLenght.Start();
+                Console.WriteLine(DateTime.Now.ToString() + " task paused");
+                timerPeriod.Stop();
+                timerLenght.Start();
+
         }
 
         private static void CreateSok()
@@ -89,26 +111,33 @@ namespace TestAppUDP
 
         private static void Receive()
         {
+            Console.WriteLine(DateTime.Now.ToString() + " task started");
             do
             {
                 Console.WriteLine("receiving...");
                 byte[] b = new byte[10240];
                 s.Receive(b);
+                //перезапуск таймера для определения неполадок в сети
+                workTimeout.Stop();
+                workTimeout.Start();
                 udpData = Deserialyse(b);
-                if(oldUdpData.HasValue)
+                if(oldUdpData.HasValue&& oldUdpData.count< udpData.count)
                 {
                     if(udpData.dateTime.Subtract(oldUdpData.dateTime).TotalMinutes<1)
                     {
                         udpData.lostPackages = udpData.count - oldUdpData.count - 1;
                     }
+                
+                    
+                    Console.WriteLine(udpData.ToString());
+                    using (ApplicationContext db = new ApplicationContext())
+                    {
+                        db.udpData.Add(udpData);
+                        db.SaveChanges();
+                    }
+
                 }
                 oldUdpData = udpData;
-                Console.WriteLine(udpData.ToString());
-                using (ApplicationContext db = new ApplicationContext())
-                {
-                    db.udpData.Add(udpData);
-                    db.SaveChanges();
-                }
 
             } while (taskEnabled);
 
