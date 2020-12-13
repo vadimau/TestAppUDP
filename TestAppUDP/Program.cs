@@ -27,8 +27,7 @@ namespace TestAppUDP
         private static string ip;
         private static Task receiving;
         private static bool taskEnabled;
-        private static UdpClient udpClient;
-
+        private static bool firstStart = true;
 
         static void Main(string[] args)
         {
@@ -95,15 +94,13 @@ namespace TestAppUDP
 
         private static void CreateSok()
         {
-            //s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            //ipAdr = IPAddress.Parse(ip);
-            //ipep = new IPEndPoint(IPAddress.Any, 4567);
-            //s.Bind(ipep);
+            s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            ipAdr = IPAddress.Parse(ip);
+            ipep = new IPEndPoint(IPAddress.Any, 4567);
+            s.Bind(ipep);
 
-            //s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ipAdr, IPAddress.Any));
-            udpClient = new UdpClient(8088);
-            udpClient.JoinMulticastGroup(IPAddress.Parse("224.100.0.1"), 50);
-
+            s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ipAdr, IPAddress.Any));
+           
         }
 
         private static UdpData Deserialyse(byte[] serializedAsBytes)
@@ -115,14 +112,6 @@ namespace TestAppUDP
             return (UdpData)formatter.Deserialize(stream);
         }
 
-        public void Start()
-        {
-            udpClient = new UdpClient(8088);
-            udpClient.JoinMulticastGroup(IPAddress.Parse("224.100.0.1"), 50);
-        }
-
-
-
         private static void Receive()
         {
             Console.WriteLine(DateTime.Now.ToString() + " task started");
@@ -130,9 +119,7 @@ namespace TestAppUDP
             {
                 Console.WriteLine("receiving...");
                 byte[] b = new byte[10240];
-                var ipEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                //s.Receive(b);
-                b= udpClient.Receive(ref ipEndPoint);
+                s.Receive(b);
                 //перезапуск таймера для определения неполадок в сети
                 workTimeout.Stop();
                 workTimeout.Start();
