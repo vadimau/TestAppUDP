@@ -14,13 +14,9 @@ namespace udpGenerator
     
     class Program
     {
-       
-
         static void Main(string[] args)
         {
             Sender sender = new Sender();
         }
-
- 
     }
 }
