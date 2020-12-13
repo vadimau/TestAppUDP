@@ -29,45 +29,60 @@ namespace TestAppUDP
         private string ip;
         private Task receiving;
         private bool taskEnabled;
-        private bool firstStart = true;
+
         public Receiver()
         {
-            taskEnabled = true;
-            Settings settings = new Settings();
-            if (settings.parameters.ContainsKey("ip"))
-                ip = settings.parameters["ip"].ToString();
-            if (settings.parameters.ContainsKey("pausePeriod"))
-                pausePeriod = int.Parse(settings.parameters["pausePeriod"].ToString());
-            if (settings.parameters.ContainsKey("pauseLenght"))
-                pauseLenght = int.Parse(settings.parameters["pauseLenght"].ToString());
-            timerPeriod = new Timer();
-            timerLenght = new Timer();
-            workTimeout = new Timer();
-            timerPeriod.Interval = pausePeriod;
-            timerLenght.Interval = pauseLenght;
-            workTimeout.Interval = 60000;
-            timerPeriod.Elapsed += TimerPeriod_Elapsed;
-            timerLenght.Elapsed += TimerLenght_Elapsed;
-            workTimeout.Elapsed += WorkTimeout_Elapsed;
-            CreateSok();
-            receiving = new Task(Receive);
-            receiving.Start();
-            timerPeriod.Start();
-
-            while (true)
+            try
             {
-                var s = Console.ReadLine();
-                GetStat();
-                if (s == "exit") break;
+                taskEnabled = true;
+                Settings settings = new Settings();
+                if (settings.parameters.ContainsKey("ip"))
+                    ip = settings.parameters["ip"].ToString();
+                if (settings.parameters.ContainsKey("pausePeriod"))
+                    pausePeriod = int.Parse(settings.parameters["pausePeriod"].ToString());
+                if (settings.parameters.ContainsKey("pauseLenght"))
+                    pauseLenght = int.Parse(settings.parameters["pauseLenght"].ToString());
+                timerPeriod = new Timer();
+                timerLenght = new Timer();
+                workTimeout = new Timer();
+                timerPeriod.Interval = pausePeriod;
+                timerLenght.Interval = pauseLenght;
+                workTimeout.Interval = 60000;
+                timerPeriod.Elapsed += TimerPeriod_Elapsed;
+                timerLenght.Elapsed += TimerLenght_Elapsed;
+                workTimeout.Elapsed += WorkTimeout_Elapsed;
+                CreateSok();
+                receiving = new Task(Receive);
+                receiving.Start();
+                timerPeriod.Start();
+
+                while (true)
+                {
+                    var s = Console.ReadLine();
+                    GetStat();
+                    if (s == "exit") break;
+                }
             }
-
-            s.Close();
+            catch
+            {
+                Console.WriteLine("Что-то пошло не так");
+            }
+            finally
+            {
+                Close();
+            }
+            
         }
-
+        /// <summary>
+        /// В случае если есть проблемы с сетью, пытаемся восстановить соединение
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void WorkTimeout_Elapsed(object sender, ElapsedEventArgs e)
         {
             if (!s.Connected)
             {
+                Close();
                 Console.WriteLine("Что-то с сетью");
                 CreateSok();
             }
@@ -154,8 +169,6 @@ namespace TestAppUDP
                 Console.WriteLine("Количество принятх пакетов / кол-во пропущенных пакетов / %");
                 Console.WriteLine(received + " | " + notReceived + " | " + 100 * notReceived / received);
 
-
-
             }
         }
 
@@ -166,7 +179,6 @@ namespace TestAppUDP
             ipAdr = IPAddress.Parse(ip);
             ipep = new IPEndPoint(IPAddress.Any, 4567);
             s.Bind(ipep);
-
             s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ipAdr, IPAddress.Any));
 
         }
@@ -213,8 +225,16 @@ namespace TestAppUDP
                 oldUdpData = udpData;
 
             } while (taskEnabled);
+        }
 
-
+        private void Close()
+        {
+            if (s != null)
+            {
+                s.Shutdown(SocketShutdown.Both);
+                s.Close();
+                s = null;
+            }
         }
     }
 }
