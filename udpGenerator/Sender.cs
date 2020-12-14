@@ -27,35 +27,47 @@ namespace udpGenerator
         private UdpData udpData;
         public Sender()
         {
-            int genPeriod = 0;
+            try
+            {
+                int genPeriod = 0;
 
-            Settings settings = new Settings();
+                Settings settings = new Settings();
 
-            if (settings.parameters.ContainsKey("genPeriod"))
-                genPeriod = int.Parse(settings.parameters["genPeriod"].ToString());
-            if (settings.parameters.ContainsKey("ip"))
-                ip = settings.parameters["ip"].ToString();
+                if (settings.parameters.ContainsKey("genPeriod"))
+                    genPeriod = int.Parse(settings.parameters["genPeriod"].ToString());
+                if (settings.parameters.ContainsKey("ip"))
+                    ip = settings.parameters["ip"].ToString();
 
-            random = new Random();
+                random = new Random();
 
-            CreateSok();
+                CreateSok();
 
-            genImpulse.Interval = genPeriod;
-            genImpulse.Elapsed += GenImpulse_Elapsed;
-            genImpulse.Start();
+                genImpulse.Interval = genPeriod;
+                genImpulse.Elapsed += GenImpulse_Elapsed;
+                genImpulse.Start();
 
-            workTimeout.Interval = 6000;
-            workTimeout.Elapsed += WorkTimeout_Elapsed;
-            workTimeout.Start();
+                workTimeout.Interval = 6000;
+                workTimeout.Elapsed += WorkTimeout_Elapsed;
+                workTimeout.Start();
 
-            Console.ReadKey();
-            s.Close();
+                Console.ReadKey();
+            }
+            catch
+            {
+                Console.WriteLine("Что-то пошло не так");
+            }
+            finally
+            {
+                Close();
+            }
         }
 
         private void WorkTimeout_Elapsed(object sender, ElapsedEventArgs e)
         {
-            Console.WriteLine("Что-то с сетью");
+            Close();
             generate.Dispose();
+            generate = null;
+            Console.WriteLine("Что-то с сетью");
             CreateSok();
         }
 
@@ -82,6 +94,7 @@ namespace udpGenerator
 
         private void GenerateData()
         {
+            Console.WriteLine("генерируем и отправляем данные");
             int value1, value2, value3, value4, value5;
 
             count = count == long.MaxValue ? 0 : count + 1;
@@ -101,10 +114,19 @@ namespace udpGenerator
         }
         private void GenImpulse_Elapsed(object sender, ElapsedEventArgs e)
         {
-            Console.WriteLine("генерируем и отправляем данные");
             generate?.Wait();
             generate = new Task(GenerateData);
             generate.Start();
+        }
+
+        private void Close()
+        {
+            if (s != null)
+            {
+                s.Shutdown(SocketShutdown.Both);
+                s.Close();
+                s = null;
+            }
         }
     }
 }

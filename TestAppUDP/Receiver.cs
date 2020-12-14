@@ -47,7 +47,7 @@ namespace TestAppUDP
                 workTimeout = new Timer();
                 timerPeriod.Interval = pausePeriod;
                 timerLenght.Interval = pauseLenght;
-                workTimeout.Interval = 60000;
+                workTimeout.Interval = 6000;
                 timerPeriod.Elapsed += TimerPeriod_Elapsed;
                 timerLenght.Elapsed += TimerLenght_Elapsed;
                 workTimeout.Elapsed += WorkTimeout_Elapsed;
